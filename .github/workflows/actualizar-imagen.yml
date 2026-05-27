@@ -1,10 +1,14 @@
-name: Actualizar Tres Imágenes Diarias
+name: Actualizar Imágenes del Sol SOHO
 
 on:
   schedule:
     # Se ejecuta todos los días a las 00:00 UTC
     - cron: '0 0 * * *'
   workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
+
+# Permisos explícitos de escritura para evitar el error 128
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -13,28 +17,35 @@ jobs:
     steps:
     - name: Configurar el repositorio
       uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Descargar las tres imágenes
+    - name: Descargar las imágenes de la NASA
       run: |
-        # Imagen 1: Remplaza la URL y el nombre del archivo final
+        # Imagen 1: Sol Visible
         curl -L "http://soho.nascom.nasa.gov/data/realtime/hmi_igr/1024/latest.jpg" -o "sol_visible.jpg"
         
-        # Imagen 2: Remplaza la URL y el nombre del archivo final
+        # Imagen 2: Helio
         curl -L "https://soho.nascom.nasa.gov/data/realtime/eit_304/1024/latest.jpg" -o "sol_helio.jpg"
         
-        # Imagen 3: Remplaza la URL y el nombre del archivo final
+        # Imagen 3: Calcio / Atmósfera
         curl -L "https://soho.nascom.nasa.gov/data/realtime/eit_171/1024/latest.jpg" -o "sol_calcio.jpg"
 
-         # Imagen 4: Remplaza la URL y el nombre del archivo final
+        # Imagen 4: Coronógrafo
         curl -L "https://soho.nascom.nasa.gov/data/realtime/c2/1024/latest.gif" -o "sol_coronografo.gif"
 
     - name: Guardar cambios y subir a GitHub
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-        git config --global user.name "GitHub Action"
-        git config --global user.email "action@github.com"
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
         
-        # Añadimos todas las imágenes que se descargaron
-        git add imagen_1.jpg imagen_2.png imagen_3.gif
+        # CORREGIDO: Añadimos los nombres REALES de los archivos descargados
+        git add sol_visible.jpg sol_helio.jpg sol_calcio.jpg sol_coronografo.gif
         
-        # Revisa si alguna de las 3 imágenes cambió para subir los cambios
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Automatizado: Actualización diaria de las 3 imágenes" && git push)
+        # Si hay cambios, hace el commit y push de forma segura
+        if ! git diff --cached --exit-code --quiet; then
+          git commit -m "Automatizado: Actualización de imágenes solares SOHO"
+          git push origin HEAD:${{ github.ref_name }}
+        fi
