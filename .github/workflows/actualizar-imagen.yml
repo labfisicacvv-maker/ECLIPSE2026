@@ -1,0 +1,40 @@
+name: Actualizar Tres Imágenes Diarias
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch: # Permite ejecutarlo manualmente desde la pestaña Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configurar el repositorio
+      uses: actions/checkout@v4
+
+    - name: Descargar las tres imágenes
+      run: |
+        # Imagen 1: Remplaza la URL y el nombre del archivo final
+        curl -L "http://soho.nascom.nasa.gov/data/realtime/hmi_igr/1024/latest.jpg" -o "sol_visible.jpg"
+        
+        # Imagen 2: Remplaza la URL y el nombre del archivo final
+        curl -L "https://soho.nascom.nasa.gov/data/realtime/eit_304/1024/latest.jpg" -o "sol_helio.jpg"
+        
+        # Imagen 3: Remplaza la URL y el nombre del archivo final
+        curl -L "https://soho.nascom.nasa.gov/data/realtime/eit_171/1024/latest.jpg" -o "sol_calcio.jpg"
+
+         # Imagen 4: Remplaza la URL y el nombre del archivo final
+        curl -L "https://soho.nascom.nasa.gov/data/realtime/c2/1024/latest.gif" -o "sol_coronografo.gif"
+
+    - name: Guardar cambios y subir a GitHub
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        
+        # Añadimos todas las imágenes que se descargaron
+        git add imagen_1.jpg imagen_2.png imagen_3.gif
+        
+        # Revisa si alguna de las 3 imágenes cambió para subir los cambios
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Automatizado: Actualización diaria de las 3 imágenes" && git push)
